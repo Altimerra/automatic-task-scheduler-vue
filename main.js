@@ -36,20 +36,20 @@ textForm = {
     },
   },
   created() {
-    this.$parent.$on("task", this.clear);
+    this.$parent.$on("send", this.clear);
   },
 };
 
-selectForm = {
+selectFormNumlist = {
   template: `
-  <form class="form-inline">
+  <div class="form-inline">
     <div class="form-group">
       <label for='id' class="mr-2">{{labelText}}</label>
           <select :id='id' class="form-control" v-model='inputSelect' @change='inputChange'>
             <option v-for='n in range(0,size,step)' :value=n>{{n}}</option>
           </select>
     </div>
-  </form>
+  </div>
   `,
   data() {
     return {
@@ -93,7 +93,90 @@ selectForm = {
     },
   },
   created() {
-    this.$parent.$on("task", this.clear);
+    this.$parent.$on("send", this.clear);
+  },
+};
+
+selectFormText = {
+  template: `
+    <div class="form-group">
+      <label for='id'>{{labelText}}</label>
+          <select :id='id' class="form-control" v-model='inputSelect' @change='inputChange'>
+            <option v-for='option in options' :value=option>{{option}}</option>
+          </select>
+    </div>
+  `,
+  data() {
+    return {
+      inputSelect: undefined,
+    };
+  },
+  components: {},
+  props: {
+    id: {
+      type: String,
+      required: true,
+    },
+    labelText: {
+      type: String,
+      required: true,
+    },
+    options: {
+      required: true,
+    },
+  },
+  methods: {
+    inputChange() {
+      this.$emit("input-change", { data: this.inputSelect, sender: this.id });
+    },
+    clear() {
+      this.inputSelect = undefined;
+    },
+  },
+  created() {
+    this.$parent.$on("send", this.clear);
+  },
+};
+
+selectFormTime = {
+  template: `
+    <div class="form-group">
+    <label for=id>{{labelText}}</label>
+    <input
+      type="time"
+      id=id
+      class="form-control"
+      v-model=inputSelect
+      @change=inputChange
+    />
+    </div>
+  `,
+  data() {
+    return {
+      inputSelect: undefined,
+    };
+  },
+  components: {},
+  props: {
+    id: {
+      type: String,
+      required: true,
+    },
+    labelText: {
+      type: String,
+      required: true,
+    },
+  },
+  methods: {
+    inputChange() {
+      this.$emit("input-change", { data: this.inputSelect, sender: this.id });
+    },
+    clear() {
+      this.inputSelect = undefined;
+    },
+  },
+  created() {
+    this.$parent.$on("send", this.clear);
   },
 };
 
@@ -141,7 +224,7 @@ closeButton = {
 
 listItem = {
   template: `
-    <li class="list-group-item d-flex" id="something">
+    <li class="list-group-item d-flex">
       <span class="mr-auto">{{item.name}}</span>
       <badge v-if='timedisplay=="single"' :text='badgeText'></badge>
       <close-button @click=close></close-button>
@@ -180,7 +263,7 @@ listItem = {
   },
 };
 
-listElement = {
+mainList = {
   template: `
     <ul class="list-group" :id=id>
       <list-item @close=close v-for='task in itemlist' :key=task.id :item=task timedisplay="single"></list-item>
@@ -200,17 +283,66 @@ listElement = {
   },
   methods: {
     close(itemid) {
-      this.$emit("remove", itemid);
+      this.$emit("remove", { id: itemid, sender: this.id });
     },
   },
 };
 
+simpleList = {
+  template: `
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item" v-for='item in items'>Cras justo odio</li>
+    </ul>
+  `,
+  props: {
+    items: {
+      reqired: true
+    }
+  },
+}
+
+card = {
+  template: `
+    <div class="card">
+      <div class="card-header">
+       Featured
+      </div>
+      <simple-list></simple-list>
+    </div>
+  `,
+  components: {
+    simpleList,
+  },
+  data() {
+    return {
+      items: []
+    }
+  },
+}
+
 formElement = {
+  //NOTE redundent
   template: `
     <div>
-      <text-form v-if="this.id=='taskform'" id="taskname" label-text="Task Name" @input-change='update'></text-form>
-      <select-form v-if="this.id=='taskform'" id="hours" label-text="Hours" :size='6' @input-change='update'></select-form>
-      <select-form v-if="this.id=='taskform'" id="minutes" label-text="Minutes" :size='59' :step='5' @input-change='update'></select-form>
+      <text-form 
+        v-if="this.id=='taskform'" 
+        id="taskname" label-text="Task Name" 
+        @input-change='update'
+      ></text-form>
+      <select-form 
+        v-if="this.id=='taskform'" 
+        id="hours" 
+        label-text="Hours" 
+        :size='6' 
+        @input-change='update'
+      ></select-form>
+      <select-form 
+        v-if="this.id=='taskform'" 
+        id="minutes" label-text="Minutes" 
+        :size='59' 
+        :step='5' 
+        @input-change='update'
+      ></select-form>
       <br />
       <submit-button @click=handleClick></submit-button>
     </div>
@@ -222,7 +354,7 @@ formElement = {
   },
   components: {
     textForm,
-    selectForm,
+    selectFormNumlist,
     submitButton,
   },
   props: {
@@ -237,6 +369,13 @@ formElement = {
         taskname: undefined,
         hours: undefined,
         minutes: undefined,
+      };
+    }
+    if (this.id == "timeblocksform") {
+      this.container = {
+        timeblocktype: undefined,
+        start: undefined,
+        end: undefined,
       };
     }
   },
@@ -264,6 +403,179 @@ formElement = {
           console.log("empty fields");
         }
       }
+      if (this.id == "timeblocksform") {
+      }
+    },
+  },
+};
+
+cardList = {
+  template: `
+    <div>
+
+    </div>
+  `,
+
+}
+
+daystrucform = {
+  template: `
+    <div>
+      <text-form id="name" labelText="Day structure name" @input-change=update></text-form>
+      <submit-button @click=handleClick></submit-button>
+    </div>
+  `,
+  data() {
+    return {
+      container: {
+        name: undefined
+      }
+    }
+  },
+  components: {
+    textForm,
+    submitButton,
+  },
+  methods: {
+    update(inputObj) {
+      this.container[inputObj.sender] = inputObj.data;
+    },
+    handleClick(){
+      //TODO this thingie
+    }
+  },
+}
+
+taskform = {
+  template: `
+    <div>
+      <text-form  
+        id="taskname" label-text="Task Name" 
+        @input-change='update'
+      ></text-form>
+      <select-form-numlist  
+        id="hours" 
+        label-text="Hours" 
+        :size='6' 
+        @input-change='update'
+      ></select-form-numlist>
+      <select-form-numlist  
+        id="minutes" label-text="Minutes" 
+        :size='59' 
+        :step='5' 
+        @input-change='update'
+      ></select-form-numlist>
+      <br />
+      <submit-button @click=handleClick></submit-button>
+    </div>
+  `,
+  data() {
+    return {
+      container: {
+        taskname: undefined,
+        hours: undefined,
+        minutes: undefined,
+      },
+    };
+  },
+  components: {
+    textForm,
+    selectFormNumlist,
+    submitButton,
+  },
+
+  methods: {
+    update(inputObj) {
+      this.container[inputObj.sender] = inputObj.data;
+    },
+    handleClick() {
+      if (
+        this.container.taskname &&
+        (this.container.hours || this.container.minutes)
+      ) {
+        let createTask = new Task(
+          this.container.taskname,
+          new Time(this.container.hours, this.container.minutes)
+        );
+        this.$emit("send", createTask);
+        this.container = {
+          taskname: undefined,
+          hours: undefined,
+          minutes: undefined,
+        };
+      } else {
+        console.log("empty fields");
+      }
+    },
+  },
+};
+
+timeblocksform = {
+  template: `
+    <div>
+      <select-form-time  
+        id="start" 
+        label-text="Start time" 
+        @input-change='update'
+      ></select-form-time>
+      <select-form-time  
+        id="end" 
+        label-text="End time" 
+        @input-change='update'
+      ></select-form-time>
+      <select-form-text  
+        id="type" 
+        label-text="Type"  
+        @input-change='update'
+        :options=options
+      ></select-form-text>
+      <br />
+      <submit-button @click=handleClick></submit-button>
+    </div>
+  `,
+  data() {
+    return {
+      container: {
+        start: undefined,
+        end: undefined,
+        type: undefined,
+      },
+
+      options: ["Awesome", "Normal"],
+    };
+  },
+  components: {
+    selectFormText,
+    selectFormTime,
+    submitButton,
+  },
+
+  methods: {
+    update(inputObj) {
+      this.container[inputObj.sender] = inputObj.data;
+    },
+    handleClick() {
+      if (
+        this.container.start &&
+        this.container.end &&
+        this.container.type &&
+        timeStringToNumber(this.container.end) >
+          timeStringToNumber(this.container.start)
+      ) {
+        let createblock = new Timeblock(
+          timeStringToObject(this.container.start),
+          timeStringToObject(this.container.end),
+          this.container.type
+        );
+        this.$emit("send", createblock);
+        this.container = {
+          start: undefined,
+          end: undefined,
+          type: undefined,
+        };
+      } else {
+        console.log("empty fields");
+      }
     },
   },
 };
@@ -276,37 +588,53 @@ window.app = new Vue({
         <div class="row">
             <div class="col-md-4">
               <h5>Enter task</h5>
-              <form-element id="taskform" @task=storeTask></form-element>
+              <taskform @send=storeTask></taskform>
               <hr />
               <h5>Task list</h5>
-              <list-element id="tasklist" :itemlist=tasks @remove=remove></list-element>
+              <main-list id="tasks" :itemlist=tasks @remove=remove></main-list>
             </div>
-            <div class="col-md-4">Hii</div>
-            <div class="col-md-4">Hii</div>
+            <div class="col-md-4">
+              <h5>Enter timeblocks</h5>
+              <timeblocksform @send=storeTimeblock></timeblocksform>
+              <hr />
+              <h5>Timeblocks</h5>
+              <main-list id="timeblocks" :itemlist=timeblocks @remove=remove></main-list>
+              <hr />
+              <h5>Create day structure</h5>
+              <daystrucform></daystrucform>
+            </div>
+            <div class="col-md-4">
+              <card></card>
+            </div>
         </div>
     </div>
     `,
   data: function () {
     return {
       tasks: [],
+      timeblocks: [],
     };
   },
 
   components: {
-    formElement,
-    listElement,
+    mainList,
+    taskform,
+    timeblocksform,
+    card,
+    daystrucform,
   },
   methods: {
-    handleit() {
-      console.log("yello");
-    },
     storeTask(task) {
       this.tasks.push(task);
     },
-    remove(itemid) {
-      for (i = 0; i < this.tasks.length; i++) {
-        if (this.tasks[i].id == itemid) {
-          this.tasks.splice(i, 1);
+    storeTimeblock(timeblock) {
+      this.timeblocks.push(timeblock);
+    },
+    remove(obj) {
+      let list = this.$data[obj.sender];
+      for (i = 0; i < list.length; i++) {
+        if (list[i].id == obj.id) {
+          list.splice(i, 1);
         }
       }
     },
@@ -328,11 +656,11 @@ function Task(name, timeobj, urgency = 0, repeat = 0) {
   this.completed = false;
 }
 
-function Timeblock(startTime, endTime, type = 0) {
+function Timeblock(startTime, endTime, type) {
   this.id = generate();
   this.startTime = startTime;
   this.endTime = endTime;
-  this.type = type;
+  this.name = type;
   this.time = timeDifference(this.startTime, this.endTime);
   this.tasks = [];
   this.availableTime = timeDifference(this.startTime, this.endTime);
@@ -357,7 +685,9 @@ function Time(hours, minutes) {
   this.timeAmount = this.hours * 60 + this.minutes;
 }
 
-/* --------------------- functions required for objects --------------------- */
+/* -------------------------------------------------------------------------- */
+/*                                  Functions                                 */
+/* -------------------------------------------------------------------------- */
 
 function idGenerator() {
   // NOTE cannot create more than 99 ids in one milisecond
@@ -397,5 +727,15 @@ function createTimeblocks(daystructure) {
     );
   }
   return timeblocksArray;
+}
+
+function timeStringToObject(timestring) {
+  let timeObj = new Time(timestring.slice(0, 2), timestring.slice(-2));
+  return timeObj;
+}
+
+function timeStringToNumber(timestring) {
+  let newstring = timestring.slice(0, 2) + timestring.slice(3);
+  return Number(newstring);
 }
 //!SECTION

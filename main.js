@@ -98,16 +98,13 @@ selectFormNumlist = {
 };
 
 selectFormText = {
-  //FIXME options
   template: `
-  
     <div class="form-group">
       <label for='id'>{{labelText}}</label>
           <select :id='id' class="form-control" v-model='inputSelect' @change='inputChange'>
-            <option v-for='n in range(0,size,step)' :value=n>{{n}}</option>
+            <option v-for='option in options' :value=option>{{option}}</option>
           </select>
     </div>
-  
   `,
   data() {
     return {
@@ -142,16 +139,17 @@ selectFormText = {
 };
 
 selectFormTime = {
-  //FIXME options
   template: `
-  
     <div class="form-group">
-      <label for='id'>{{labelText}}</label>
-          <select :id='id' class="form-control" v-model='inputSelect' @change='inputChange'>
-            <option v-for='n in range(0,size,step)' :value=n>{{n}}</option>
-          </select>
+    <label for=id>{{labelText}}</label>
+    <input
+      type="time"
+      id=id
+      class="form-control"
+      v-model=inputSelect
+      @change=inputChange
+    />
     </div>
-  
   `,
   data() {
     return {
@@ -166,9 +164,6 @@ selectFormTime = {
     },
     labelText: {
       type: String,
-      required: true,
-    },
-    options: {
       required: true,
     },
   },
@@ -229,7 +224,7 @@ closeButton = {
 
 listItem = {
   template: `
-    <li class="list-group-item d-flex" id="something">
+    <li class="list-group-item d-flex">
       <span class="mr-auto">{{item.name}}</span>
       <badge v-if='timedisplay=="single"' :text='badgeText'></badge>
       <close-button @click=close></close-button>
@@ -288,12 +283,13 @@ listElement = {
   },
   methods: {
     close(itemid) {
-      this.$emit("remove", itemid);
+      this.$emit("remove", { id: itemid, sender: this.id });
     },
   },
 };
 
 formElement = {
+  //NOTE redundent
   template: `
     <div>
       <text-form 
@@ -418,7 +414,7 @@ taskform = {
     selectFormNumlist,
     submitButton,
   },
-  
+
   methods: {
     update(inputObj) {
       this.container[inputObj.sender] = inputObj.data;
@@ -448,22 +444,22 @@ taskform = {
 timeblocksform = {
   template: `
     <div>
-      <text-form  
-        id="taskname" label-text="Task Name" 
+      <select-form-time  
+        id="start" 
+        label-text="Start time" 
         @input-change='update'
-      ></text-form>
-      <select-form-numlist  
-        id="hours" 
-        label-text="Hours" 
-        :size='6' 
+      ></select-form-time>
+      <select-form-time  
+        id="end" 
+        label-text="End time" 
         @input-change='update'
-      ></select-form-numlist>
-      <select-form-numlist  
-        id="minutes" label-text="Minutes" 
-        :size='59' 
-        :step='5' 
+      ></select-form-time>
+      <select-form-text  
+        id="type" 
+        label-text="Type"  
         @input-change='update'
-      ></select-form-numlist>
+        :options=options
+      ></select-form-text>
       <br />
       <submit-button @click=handleClick></submit-button>
     </div>
@@ -471,36 +467,42 @@ timeblocksform = {
   data() {
     return {
       container: {
-        taskname: undefined,
-        hours: undefined,
-        minutes: undefined,
+        start: undefined,
+        end: undefined,
+        type: undefined,
       },
+
+      options: ["Awesome", "Normal"],
     };
   },
   components: {
-    textForm,
-    selectFormNumlist,
+    selectFormText,
+    selectFormTime,
     submitButton,
   },
-  
+
   methods: {
     update(inputObj) {
       this.container[inputObj.sender] = inputObj.data;
     },
     handleClick() {
       if (
-        this.container.taskname &&
-        (this.container.hours || this.container.minutes)
+        this.container.start &&
+        this.container.end &&
+        this.container.type &&
+        timeStringToNumber(this.container.end) >
+          timeStringToNumber(this.container.start)
       ) {
-        let createTask = new Task(
-          this.container.taskname,
-          new Time(this.container.hours, this.container.minutes)
+        let createblock = new Timeblock(
+          timeStringToObject(this.container.start),
+          timeStringToObject(this.container.end),
+          this.container.type
         );
-        this.$emit("send", createTask);
+        this.$emit("send", createblock);
         this.container = {
-          taskname: undefined,
-          hours: undefined,
-          minutes: undefined,
+          start: undefined,
+          end: undefined,
+          type: undefined,
         };
       } else {
         console.log("empty fields");
@@ -508,7 +510,6 @@ timeblocksform = {
     },
   },
 };
-
 
 window.app = new Vue({
   el: "#app",
@@ -521,10 +522,14 @@ window.app = new Vue({
               <taskform @send=storeTask></taskform>
               <hr />
               <h5>Task list</h5>
-              <list-element id="tasklist" :itemlist=tasks @remove=remove></list-element>
+              <list-element id="tasks" :itemlist=tasks @remove=remove></list-element>
             </div>
             <div class="col-md-4">
-              <form-element id="timeblocksform"></form-element>
+              <h5>Enter timeblocks</h5>
+              <timeblocksform @send=storeTimeblock></timeblocksform>
+              <hr />
+              <h5>Timeblocks</h5>
+              <list-element id="timeblocks" :itemlist=timeblocks @remove=remove></list-element>
             </div>
             <div class="col-md-4">Hii</div>
         </div>
@@ -538,21 +543,22 @@ window.app = new Vue({
   },
 
   components: {
-    formElement,
     listElement,
     taskform,
+    timeblocksform,
   },
   methods: {
-    handleit() {
-      console.log("yello");
-    },
     storeTask(task) {
       this.tasks.push(task);
     },
-    remove(itemid) {
-      for (i = 0; i < this.tasks.length; i++) {
-        if (this.tasks[i].id == itemid) {
-          this.tasks.splice(i, 1);
+    storeTimeblock(timeblock) {
+      this.timeblocks.push(timeblock);
+    },
+    remove(obj) {
+      let list = this.$data[obj.sender];
+      for (i = 0; i < list.length; i++) {
+        if (list[i].id == obj.id) {
+          list.splice(i, 1);
         }
       }
     },
@@ -574,11 +580,11 @@ function Task(name, timeobj, urgency = 0, repeat = 0) {
   this.completed = false;
 }
 
-function Timeblock(startTime, endTime, type = 0) {
+function Timeblock(startTime, endTime, type) {
   this.id = generate();
   this.startTime = startTime;
   this.endTime = endTime;
-  this.type = type;
+  this.name = type;
   this.time = timeDifference(this.startTime, this.endTime);
   this.tasks = [];
   this.availableTime = timeDifference(this.startTime, this.endTime);
@@ -603,7 +609,9 @@ function Time(hours, minutes) {
   this.timeAmount = this.hours * 60 + this.minutes;
 }
 
-/* --------------------- functions required for objects --------------------- */
+/* -------------------------------------------------------------------------- */
+/*                                  Functions                                 */
+/* -------------------------------------------------------------------------- */
 
 function idGenerator() {
   // NOTE cannot create more than 99 ids in one milisecond
@@ -634,7 +642,7 @@ function timeDifference(time1, time2) {
   }
   return new Time(newhours, newminutes);
 }
-// FIXME implement deepcopy from lodash
+
 function createTimeblocks(daystructure) {
   let timeblocksArray = [];
   for (timeblock of daystructure.timeblocks) {
@@ -643,5 +651,15 @@ function createTimeblocks(daystructure) {
     );
   }
   return timeblocksArray;
+}
+
+function timeStringToObject(timestring) {
+  let timeObj = new Time(timestring.slice(0, 2), timestring.slice(-2));
+  return timeObj;
+}
+
+function timeStringToNumber(timestring) {
+  let newstring = timestring.slice(0, 2) + timestring.slice(3);
+  return Number(newstring);
 }
 //!SECTION

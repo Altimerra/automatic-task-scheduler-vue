@@ -263,7 +263,7 @@ listItem = {
   },
 };
 
-listElement = {
+mainList = {
   template: `
     <ul class="list-group" :id=id>
       <list-item @close=close v-for='task in itemlist' :key=task.id :item=task timedisplay="single"></list-item>
@@ -287,6 +287,38 @@ listElement = {
     },
   },
 };
+
+simpleList = {
+  template: `
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item" v-for='item in items'>Cras justo odio</li>
+    </ul>
+  `,
+  props: {
+    items: {
+      reqired: true
+    }
+  },
+}
+
+card = {
+  template: `
+    <div class="card">
+      <div class="card-header">
+       Featured
+      </div>
+      <simple-list></simple-list>
+    </div>
+  `,
+  components: {
+    simpleList,
+  },
+  data() {
+    return {
+      items: []
+    }
+  },
+}
 
 formElement = {
   //NOTE redundent
@@ -376,6 +408,43 @@ formElement = {
     },
   },
 };
+
+cardList = {
+  template: `
+    <div>
+
+    </div>
+  `,
+
+}
+
+daystrucform = {
+  template: `
+    <div>
+      <text-form id="name" labelText="Day structure name" @input-change=update></text-form>
+      <submit-button @click=handleClick></submit-button>
+    </div>
+  `,
+  data() {
+    return {
+      container: {
+        name: undefined
+      }
+    }
+  },
+  components: {
+    textForm,
+    submitButton,
+  },
+  methods: {
+    update(inputObj) {
+      this.container[inputObj.sender] = inputObj.data;
+    },
+    handleClick(){
+      //TODO this thingie
+    }
+  },
+}
 
 taskform = {
   template: `
@@ -522,16 +591,21 @@ window.app = new Vue({
               <taskform @send=storeTask></taskform>
               <hr />
               <h5>Task list</h5>
-              <list-element id="tasks" :itemlist=tasks @remove=remove></list-element>
+              <main-list id="tasks" :itemlist=tasks @remove=remove></main-list>
             </div>
             <div class="col-md-4">
               <h5>Enter timeblocks</h5>
               <timeblocksform @send=storeTimeblock></timeblocksform>
               <hr />
               <h5>Timeblocks</h5>
-              <list-element id="timeblocks" :itemlist=timeblocks @remove=remove></list-element>
+              <main-list id="timeblocks" :itemlist=timeblocks @remove=remove></main-list>
+              <hr />
+              <h5>Create day structure</h5>
+              <daystrucform></daystrucform>
             </div>
-            <div class="col-md-4">Hii</div>
+            <div class="col-md-4">
+              <card></card>
+            </div>
         </div>
     </div>
     `,
@@ -543,9 +617,11 @@ window.app = new Vue({
   },
 
   components: {
-    listElement,
+    mainList,
     taskform,
     timeblocksform,
+    card,
+    daystrucform,
   },
   methods: {
     storeTask(task) {

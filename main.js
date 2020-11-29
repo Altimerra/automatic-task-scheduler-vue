@@ -208,9 +208,25 @@ listElement = {
 formElement = {
   template: `
     <div>
-      <text-form v-if="this.id=='taskform'" id="taskname" label-text="Task Name" @input-change='update'></text-form>
-      <select-form v-if="this.id=='taskform'" id="hours" label-text="Hours" :size='6' @input-change='update'></select-form>
-      <select-form v-if="this.id=='taskform'" id="minutes" label-text="Minutes" :size='59' :step='5' @input-change='update'></select-form>
+      <text-form 
+        v-if="this.id=='taskform'" 
+        id="taskname" label-text="Task Name" 
+        @input-change='update'
+      ></text-form>
+      <select-form 
+        v-if="this.id=='taskform'" 
+        id="hours" 
+        label-text="Hours" 
+        :size='6' 
+        @input-change='update'
+      ></select-form>
+      <select-form 
+        v-if="this.id=='taskform'" 
+        id="minutes" label-text="Minutes" 
+        :size='59' 
+        :step='5' 
+        @input-change='update'
+      ></select-form>
       <br />
       <submit-button @click=handleClick></submit-button>
     </div>
@@ -237,7 +253,14 @@ formElement = {
         taskname: undefined,
         hours: undefined,
         minutes: undefined,
-      };
+      }
+    }
+    if (this.id == "timeblocksform") {
+      this.container = {
+        timeblocktype: undefined,
+        start: undefined,
+        end: undefined,
+      }
     }
   },
   methods: {
@@ -264,6 +287,10 @@ formElement = {
           console.log("empty fields");
         }
       }
+      if (this.id == "timeblocksform") {
+
+      }
+
     },
   },
 };
@@ -281,7 +308,9 @@ window.app = new Vue({
               <h5>Task list</h5>
               <list-element id="tasklist" :itemlist=tasks @remove=remove></list-element>
             </div>
-            <div class="col-md-4">Hii</div>
+            <div class="col-md-4">
+              <form-element id="timeblocksform"></form-element>
+            </div>
             <div class="col-md-4">Hii</div>
         </div>
     </div>
@@ -289,6 +318,7 @@ window.app = new Vue({
   data: function () {
     return {
       tasks: [],
+      timeblocks: [],
     };
   },
 
@@ -388,7 +418,7 @@ function timeDifference(time1, time2) {
   }
   return new Time(newhours, newminutes);
 }
-
+// FIXME implement deepcopy from lodash
 function createTimeblocks(daystructure) {
   let timeblocksArray = [];
   for (timeblock of daystructure.timeblocks) {

@@ -7,18 +7,16 @@ textForm = {
             class="form-control"
             v-model='inputText'
             :id='id'
-            @change='inputChange()'
+            @change='inputChange'
         />
     </div>
     `,
   data() {
     return {
-      inputText: "",
+      inputText: undefined,
     };
   },
-  components: {
-    
-  },
+  components: {},
   props: {
     id: {
       type: String,
@@ -28,23 +26,18 @@ textForm = {
       type: String,
       required: true,
     },
-    clear: {
-      type: Boolean
-    }
   },
   methods: {
     inputChange() {
-      this.$emit('input-change', {data:this.inputText, sender: this.id})
-    }
+      this.$emit("input-change", { data: this.inputText, sender: this.id });
+    },
+    clear() {
+      this.inputText = undefined;
+    },
   },
-  watch: {
-    clear: function(value) {
-      if (value==true) {  
-        this.inputText = ""
-        this.$emit('cleared')
-      }
-    }
-  }
+  created() {
+    this.$parent.$on("task", this.clear);
+  },
 };
 
 selectForm = {
@@ -60,16 +53,14 @@ selectForm = {
   `,
   data() {
     return {
-      inputSelect: Number
-    }
+      inputSelect: undefined,
+    };
   },
-  components: {
-    
-  },
+  components: {},
   props: {
     id: {
       type: String,
-      required: true 
+      required: true,
     },
     labelText: {
       type: String,
@@ -81,24 +72,30 @@ selectForm = {
     },
     step: {
       type: Number,
-      default: 1
-    }
+      default: 1,
+    },
   },
   methods: {
     range(min, max, step) {
       let array = [],
-      j = 0;
-      for(var i = min; i <= max; i=i+step){
+        j = 0;
+      for (var i = min; i <= max; i = i + step) {
         array[j] = i;
         j++;
       }
       return array;
     },
     inputChange() {
-      this.$emit('input-change', {data:this.inputSelect, sender: this.id})
+      this.$emit("input-change", { data: this.inputSelect, sender: this.id });
+    },
+    clear() {
+      this.inputSelect = undefined;
     },
   },
-}
+  created() {
+    this.$parent.$on("task", this.clear);
+  },
+};
 
 submitButton = {
   template: `
@@ -114,19 +111,20 @@ submitButton = {
   `,
   methods: {
     handleClick() {
-      this.$emit('click')
-    }
-  },
-}
-
-badge = {
-  template: `<span class="mr-2" v-if=text><span class="badge badge-dark">{{text}}</span></span>`,
-  props: {
-    text: {
-      type: String, 
+      this.$emit("click");
     },
   },
-}
+};
+
+badge = {
+  template: `<span class="mr-2"><span class="badge badge-dark">{{text}}</span></span>`,
+  props: {
+    text: {
+      type: String,
+      reqired: true,
+    },
+  },
+};
 
 closeButton = {
   template: `
@@ -136,41 +134,59 @@ closeButton = {
   `,
   methods: {
     clickClose() {
-      this.$emit('click')
-    }
+      this.$emit("click");
+    },
   },
-}
-
+};
 
 listItem = {
   template: `
     <li class="list-group-item d-flex" id="something">
-      <span class="mr-auto">List item</span>
-      <badge text="hi"></badge>
-      <badge text="there"></badge>
-      <close-button @click=close()></close-button>
+      <span class="mr-auto">{{item.name}}</span>
+      <badge v-if='timedisplay=="single"' :text='badgeText'></badge>
+      <close-button @click=close></close-button>
     </li>
   `,
   components: {
     badge,
     closeButton,
   },
+  props: {
+    item: {
+      required: true,
+    },
+    timedisplay: {
+      type: String,
+      required: true,
+    },
+  },
   methods: {
     close() {
-      this.$emit('close', this)
-    }
+      this.$emit("close", this.item.id);
+    },
   },
-}
+  computed: {
+    badgeText() {
+      let hours = this.item.time.hours.toString();
+      if (hours == "NaN") {
+        hours = "0";
+      }
+      let minutes = this.item.time.minutes.toString();
+      if (minutes == "NaN") {
+        minutes = "0";
+      }
+      return hours + "h " + minutes + "m";
+    },
+  },
+};
 
 listElement = {
   template: `
     <ul class="list-group" :id=id>
-      <list-item @close=close v-for='task in tasks'></list-item>
+      <list-item @close=close v-for='task in itemlist' :key=task.id :item=task timedisplay="single"></list-item>
     </ul>`,
   data() {
-    return {
-
-    }
+    return {};
   },
   components: {
     listItem,
@@ -178,61 +194,77 @@ listElement = {
   props: {
     id: {
       type: String,
-      required: true 
+      required: true,
     },
-    tasks: Array
+    itemlist: Array,
   },
   methods: {
-    close(item){
-      console.log(item)
-    }
+    close(itemid) {
+      this.$emit("remove", itemid);
+    },
   },
-
-}
+};
 
 formElement = {
   template: `
     <div>
-      <text-form id="taskname" label-text="Task Name" @input-change='update' :clear=reset @cleared=cleared></text-form>
-      <select-form id="hours" label-text="Hours" :size='6' @input-change='update'></select-form>
-      <select-form id="minutes" label-text="Minutes" :size='59' :step='5' @input-change='update'></select-form>
+      <text-form v-if="this.id=='taskform'" id="taskname" label-text="Task Name" @input-change='update'></text-form>
+      <select-form v-if="this.id=='taskform'" id="hours" label-text="Hours" :size='6' @input-change='update'></select-form>
+      <select-form v-if="this.id=='taskform'" id="minutes" label-text="Minutes" :size='59' :step='5' @input-change='update'></select-form>
       <br />
       <submit-button @click=handleClick></submit-button>
     </div>
   `,
   data() {
     return {
-      newTask: {
-        taskname: '',
-        hours: 0,
-        minutes: 0
-      },
-      reset: false
-    }
+      container: {},
+    };
   },
   components: {
     textForm,
     selectForm,
-    submitButton
+    submitButton,
   },
   props: {
     id: {
       type: String,
-      required: true 
+      required: true,
     },
+  },
+  created() {
+    if (this.id == "taskform") {
+      this.container = {
+        taskname: undefined,
+        hours: undefined,
+        minutes: undefined,
+      };
+    }
   },
   methods: {
     update(inputObj) {
-      this.newTask[inputObj.sender] = inputObj.data
+      this.container[inputObj.sender] = inputObj.data;
     },
     handleClick() {
-      let createTask = new Task(this.newTask.taskname,new Time(this.newTask.hours, this.newTask.minutes))
-      this.$emit('task', createTask)
-      this.reset = true
+      if (this.id == "taskform") {
+        if (
+          this.container.taskname &&
+          (this.container.hours || this.container.minutes)
+        ) {
+          let createTask = new Task(
+            this.container.taskname,
+            new Time(this.container.hours, this.container.minutes)
+          );
+          this.$emit("task", createTask);
+          this.container = {
+            taskname: undefined,
+            hours: undefined,
+            minutes: undefined,
+          };
+        } else {
+          console.log("empty fields");
+        }
+      }
     },
-    cleared() {
-      this.reset = false
-    }
   },
 };
 
@@ -247,7 +279,7 @@ window.app = new Vue({
               <form-element id="taskform" @task=storeTask></form-element>
               <hr />
               <h5>Task list</h5>
-              <list-element id="tasklist" :tasks=tasks></list-element>
+              <list-element id="tasklist" :itemlist=tasks @remove=remove></list-element>
             </div>
             <div class="col-md-4">Hii</div>
             <div class="col-md-4">Hii</div>
@@ -256,7 +288,7 @@ window.app = new Vue({
     `,
   data: function () {
     return {
-      tasks: []
+      tasks: [],
     };
   },
 
@@ -266,14 +298,20 @@ window.app = new Vue({
   },
   methods: {
     handleit() {
-      console.log("yello")
+      console.log("yello");
     },
     storeTask(task) {
-      this.tasks.push(task)
-    }
+      this.tasks.push(task);
+    },
+    remove(itemid) {
+      for (i = 0; i < this.tasks.length; i++) {
+        if (this.tasks[i].id == itemid) {
+          this.tasks.splice(i, 1);
+        }
+      }
+    },
   },
 });
-
 
 /* -------------------------------------------------------------------------- */
 /*                             Object definitions                             */

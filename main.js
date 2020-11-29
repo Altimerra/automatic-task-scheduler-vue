@@ -36,20 +36,20 @@ textForm = {
     },
   },
   created() {
-    this.$parent.$on("task", this.clear);
+    this.$parent.$on("send", this.clear);
   },
 };
 
-selectForm = {
+selectFormNumlist = {
   template: `
-  <form class="form-inline">
+  <div class="form-inline">
     <div class="form-group">
       <label for='id' class="mr-2">{{labelText}}</label>
           <select :id='id' class="form-control" v-model='inputSelect' @change='inputChange'>
             <option v-for='n in range(0,size,step)' :value=n>{{n}}</option>
           </select>
     </div>
-  </form>
+  </div>
   `,
   data() {
     return {
@@ -93,7 +93,95 @@ selectForm = {
     },
   },
   created() {
-    this.$parent.$on("task", this.clear);
+    this.$parent.$on("send", this.clear);
+  },
+};
+
+selectFormText = {
+  //FIXME options
+  template: `
+  
+    <div class="form-group">
+      <label for='id'>{{labelText}}</label>
+          <select :id='id' class="form-control" v-model='inputSelect' @change='inputChange'>
+            <option v-for='n in range(0,size,step)' :value=n>{{n}}</option>
+          </select>
+    </div>
+  
+  `,
+  data() {
+    return {
+      inputSelect: undefined,
+    };
+  },
+  components: {},
+  props: {
+    id: {
+      type: String,
+      required: true,
+    },
+    labelText: {
+      type: String,
+      required: true,
+    },
+    options: {
+      required: true,
+    },
+  },
+  methods: {
+    inputChange() {
+      this.$emit("input-change", { data: this.inputSelect, sender: this.id });
+    },
+    clear() {
+      this.inputSelect = undefined;
+    },
+  },
+  created() {
+    this.$parent.$on("send", this.clear);
+  },
+};
+
+selectFormTime = {
+  //FIXME options
+  template: `
+  
+    <div class="form-group">
+      <label for='id'>{{labelText}}</label>
+          <select :id='id' class="form-control" v-model='inputSelect' @change='inputChange'>
+            <option v-for='n in range(0,size,step)' :value=n>{{n}}</option>
+          </select>
+    </div>
+  
+  `,
+  data() {
+    return {
+      inputSelect: undefined,
+    };
+  },
+  components: {},
+  props: {
+    id: {
+      type: String,
+      required: true,
+    },
+    labelText: {
+      type: String,
+      required: true,
+    },
+    options: {
+      required: true,
+    },
+  },
+  methods: {
+    inputChange() {
+      this.$emit("input-change", { data: this.inputSelect, sender: this.id });
+    },
+    clear() {
+      this.inputSelect = undefined;
+    },
+  },
+  created() {
+    this.$parent.$on("send", this.clear);
   },
 };
 
@@ -238,7 +326,7 @@ formElement = {
   },
   components: {
     textForm,
-    selectForm,
+    selectFormNumlist,
     submitButton,
   },
   props: {
@@ -253,14 +341,14 @@ formElement = {
         taskname: undefined,
         hours: undefined,
         minutes: undefined,
-      }
+      };
     }
     if (this.id == "timeblocksform") {
       this.container = {
         timeblocktype: undefined,
         start: undefined,
         end: undefined,
-      }
+      };
     }
   },
   methods: {
@@ -288,12 +376,139 @@ formElement = {
         }
       }
       if (this.id == "timeblocksform") {
-
       }
-
     },
   },
 };
+
+taskform = {
+  template: `
+    <div>
+      <text-form  
+        id="taskname" label-text="Task Name" 
+        @input-change='update'
+      ></text-form>
+      <select-form-numlist  
+        id="hours" 
+        label-text="Hours" 
+        :size='6' 
+        @input-change='update'
+      ></select-form-numlist>
+      <select-form-numlist  
+        id="minutes" label-text="Minutes" 
+        :size='59' 
+        :step='5' 
+        @input-change='update'
+      ></select-form-numlist>
+      <br />
+      <submit-button @click=handleClick></submit-button>
+    </div>
+  `,
+  data() {
+    return {
+      container: {
+        taskname: undefined,
+        hours: undefined,
+        minutes: undefined,
+      },
+    };
+  },
+  components: {
+    textForm,
+    selectFormNumlist,
+    submitButton,
+  },
+  
+  methods: {
+    update(inputObj) {
+      this.container[inputObj.sender] = inputObj.data;
+    },
+    handleClick() {
+      if (
+        this.container.taskname &&
+        (this.container.hours || this.container.minutes)
+      ) {
+        let createTask = new Task(
+          this.container.taskname,
+          new Time(this.container.hours, this.container.minutes)
+        );
+        this.$emit("send", createTask);
+        this.container = {
+          taskname: undefined,
+          hours: undefined,
+          minutes: undefined,
+        };
+      } else {
+        console.log("empty fields");
+      }
+    },
+  },
+};
+
+timeblocksform = {
+  template: `
+    <div>
+      <text-form  
+        id="taskname" label-text="Task Name" 
+        @input-change='update'
+      ></text-form>
+      <select-form-numlist  
+        id="hours" 
+        label-text="Hours" 
+        :size='6' 
+        @input-change='update'
+      ></select-form-numlist>
+      <select-form-numlist  
+        id="minutes" label-text="Minutes" 
+        :size='59' 
+        :step='5' 
+        @input-change='update'
+      ></select-form-numlist>
+      <br />
+      <submit-button @click=handleClick></submit-button>
+    </div>
+  `,
+  data() {
+    return {
+      container: {
+        taskname: undefined,
+        hours: undefined,
+        minutes: undefined,
+      },
+    };
+  },
+  components: {
+    textForm,
+    selectFormNumlist,
+    submitButton,
+  },
+  
+  methods: {
+    update(inputObj) {
+      this.container[inputObj.sender] = inputObj.data;
+    },
+    handleClick() {
+      if (
+        this.container.taskname &&
+        (this.container.hours || this.container.minutes)
+      ) {
+        let createTask = new Task(
+          this.container.taskname,
+          new Time(this.container.hours, this.container.minutes)
+        );
+        this.$emit("send", createTask);
+        this.container = {
+          taskname: undefined,
+          hours: undefined,
+          minutes: undefined,
+        };
+      } else {
+        console.log("empty fields");
+      }
+    },
+  },
+};
+
 
 window.app = new Vue({
   el: "#app",
@@ -303,7 +518,7 @@ window.app = new Vue({
         <div class="row">
             <div class="col-md-4">
               <h5>Enter task</h5>
-              <form-element id="taskform" @task=storeTask></form-element>
+              <taskform @send=storeTask></taskform>
               <hr />
               <h5>Task list</h5>
               <list-element id="tasklist" :itemlist=tasks @remove=remove></list-element>
@@ -325,6 +540,7 @@ window.app = new Vue({
   components: {
     formElement,
     listElement,
+    taskform,
   },
   methods: {
     handleit() {

@@ -291,12 +291,13 @@ mainList = {
 simpleList = {
   template: `
     <ul class="list-group list-group-flush">
-      <li class="list-group-item" v-for='item in items'>Cras justo odio</li>
+      <li class="list-group-item" v-for='item in items'>{{item.name}}</li>
     </ul>
   `,
   props: {
     items: {
-      reqired: true
+      reqired: true,
+      type: Array
     }
   },
 }
@@ -305,18 +306,25 @@ card = {
   template: `
     <div class="card">
       <div class="card-header">
-       Featured
+       {{struct.name}}
       </div>
-      <simple-list></simple-list>
+      <simple-list :items=struct.timeblocks></simple-list>
     </div>
   `,
+  // TODO add close button
   components: {
     simpleList,
   },
   data() {
     return {
-      items: []
+      
     }
+  },
+  props: {
+    struct: {
+      type: DayStructure,
+      required: true 
+    },
   },
 }
 
@@ -412,9 +420,18 @@ formElement = {
 cardList = {
   template: `
     <div>
-
+      <card v-for='struct in daystructs' :key=struct.id :struct=struct></card>
     </div>
   `,
+  props: {
+    daystructs: {
+      type: Array,
+      required: true
+    },
+  },
+  components: {
+    card,
+  },
 
 }
 
@@ -441,7 +458,9 @@ daystrucform = {
       this.container[inputObj.sender] = inputObj.data;
     },
     handleClick(){
-      //TODO this thingie
+      if(this.container.name) {
+        this.$emit('send', this.container.name)
+      }
     }
   },
 }
@@ -601,10 +620,10 @@ window.app = new Vue({
               <main-list id="timeblocks" :itemlist=timeblocks @remove=remove></main-list>
               <hr />
               <h5>Create day structure</h5>
-              <daystrucform></daystrucform>
+              <daystrucform @send=createDaystruc></daystrucform>
             </div>
             <div class="col-md-4">
-              <card></card>
+              <card-list :daystructs=daystructs></card-list>
             </div>
         </div>
     </div>
@@ -613,6 +632,7 @@ window.app = new Vue({
     return {
       tasks: [],
       timeblocks: [],
+      daystructs: [],
     };
   },
 
@@ -620,7 +640,7 @@ window.app = new Vue({
     mainList,
     taskform,
     timeblocksform,
-    card,
+    cardList,
     daystrucform,
   },
   methods: {
@@ -629,6 +649,13 @@ window.app = new Vue({
     },
     storeTimeblock(timeblock) {
       this.timeblocks.push(timeblock);
+    },
+    createDaystruc(name) {
+      if (this.timeblocks.length>0){
+        let daystruc = new DayStructure(name, _.clone(this.timeblocks))
+        this.daystructs.push(daystruc)
+        this.timeblocks.splice(0,this.timeblocks.length)
+      }
     },
     remove(obj) {
       let list = this.$data[obj.sender];
@@ -671,12 +698,12 @@ function DayStructure(name, timeblocks) {
   this.id = generate();
   this.timeblocks = timeblocks;
 }
-
+// NOTE testing lodash clone
 function Day(name, daystructure) {
   this.name = name;
   this.id = generate();
   this.date = new Date();
-  this.timeblocks = createTimeblocks(daystructure);
+  this.timeblocks = _.cloneDeep(daystructure.timeblocks);
 }
 
 function Time(hours, minutes) {

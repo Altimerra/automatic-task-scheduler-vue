@@ -28,6 +28,9 @@ body footer {
     display: inline-flex;
     vertical-align: middle;
 }
+.card{
+    margin-bottom: 0.5em;
+}
 
 
 /*dark theme*/

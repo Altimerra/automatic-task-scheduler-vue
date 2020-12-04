@@ -666,6 +666,14 @@ window.app = new Vue({
       }
     },
   },
+  mounted () {
+    if (window.Worker) {
+      var storage = new Worker('handleStorage.js')
+    };
+  },
+  updated () {
+    ;
+  },
 });
 
 /* -------------------------------------------------------------------------- */
@@ -766,3 +774,5 @@ function timeStringToNumber(timestring) {
   return Number(newstring);
 }
 //!SECTION
+
+//FIXME Compatibility issues with old browsers

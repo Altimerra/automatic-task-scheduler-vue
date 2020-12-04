@@ -491,9 +491,9 @@ taskform = {
   data() {
     return {
       container: {
-        taskname: undefined,
-        hours: undefined,
-        minutes: undefined,
+        taskname: '',
+        hours: 0,
+        minutes: 0,
       },
     };
   },
@@ -518,9 +518,9 @@ taskform = {
         );
         this.$emit("send", createTask);
         this.container = {
-          taskname: undefined,
-          hours: undefined,
-          minutes: undefined,
+          taskname: '',
+          hours: 0,
+          minutes: 0,
         };
       } else {
         console.log("empty fields");
@@ -667,12 +667,17 @@ window.app = new Vue({
     },
   },
   mounted () {
-    if (window.Worker) {
-      var storage = new Worker('handleStorage.js')
-    };
+    //localStorage.setItem('taskSchedulerDataTasks', '')
+    let dataTasks = localStorage.getItem('taskSchedulerDataTasks')
+    if (dataTasks) {
+      dataTasks = JSON.parse(dataTasks)
+      this.tasks = dataTasks
+    }
   },
   updated () {
-    ;
+    let dataTasks = JSON.stringify(this.tasks);
+    localStorage.setItem('taskSchedulerDataTasks', dataTasks)
+    console.log(dataTasks)
   },
 });
 

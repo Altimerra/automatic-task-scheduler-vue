@@ -1,3 +1,5 @@
+var parser = new Worker('parse.js')
+
 textForm = {
   template: `
     <div class="form-group">
@@ -668,16 +670,23 @@ window.app = new Vue({
   },
   mounted () {
     //localStorage.setItem('taskSchedulerDataTasks', '')
+    //FIXME this part is tripping balls
     let dataTasks = localStorage.getItem('taskSchedulerDataTasks')
     if (dataTasks) {
-      dataTasks = JSON.parse(dataTasks)
-      this.tasks = dataTasks
+      parser.postMessage({action: 'parse', data: dataTasks})
+      parser.onmessage = function(message) {
+        console.log(message.data)
+        incomingTasks = message.data
+      }
     }
+    this.tasks = incomingTasks
   },
   updated () {
-    let dataTasks = JSON.stringify(this.tasks);
-    localStorage.setItem('taskSchedulerDataTasks', dataTasks)
-    console.log(dataTasks)
+    parser.postMessage({action: 'stringify', data: this.tasks})
+    parser.onmessage = function(message) {
+      localStorage.setItem('taskSchedulerDataTasks', message.data)
+      console.log(message.data)
+    }
   },
 });
 

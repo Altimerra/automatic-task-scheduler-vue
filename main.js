@@ -305,8 +305,11 @@ simpleList = {
 card = {
   template: `
     <div class="card">
-      <div class="card-header">
-       {{struct.name}}
+      <div class="card-header d-flex">
+       <span class="mr-auto">
+          {{struct.name}}
+        </span>
+       <close-button @click=close></close-button>
       </div>
       <simple-list :items=struct.timeblocks></simple-list>
     </div>
@@ -314,6 +317,7 @@ card = {
   // TODO add close button
   components: {
     simpleList,
+    closeButton
   },
   data() {
     return {
@@ -325,6 +329,11 @@ card = {
       type: DayStructure,
       required: true 
     },
+  },
+  methods: {
+    close() {
+      console.log("%cyeet", "color:red")
+    }
   },
 }
 

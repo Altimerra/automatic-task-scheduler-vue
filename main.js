@@ -670,22 +670,18 @@ window.app = new Vue({
   },
   mounted () {
     //localStorage.setItem('taskSchedulerDataTasks', '')
-    //FIXME this part is tripping balls
     let dataTasks = localStorage.getItem('taskSchedulerDataTasks')
     if (dataTasks) {
       parser.postMessage({action: 'parse', data: dataTasks})
       parser.onmessage = function(message) {
-        console.log(message.data)
-        incomingTasks = message.data
+        window.app.tasks = message.data
       }
     }
-    this.tasks = incomingTasks
   },
   updated () {
     parser.postMessage({action: 'stringify', data: this.tasks})
     parser.onmessage = function(message) {
       localStorage.setItem('taskSchedulerDataTasks', message.data)
-      console.log(message.data)
     }
   },
 });

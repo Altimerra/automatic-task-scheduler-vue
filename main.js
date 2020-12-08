@@ -307,11 +307,11 @@ card = {
     <div class="card">
       <div class="card-header d-flex">
        <span class="mr-auto">
-          {{struct.name}}
+          {{item.name}}
         </span>
        <close-button @click=close></close-button>
       </div>
-      <simple-list :items=struct.timeblocks></simple-list>
+      <simple-list :items=item.timeblocks></simple-list>
     </div>
   `,
   // TODO add close button
@@ -325,14 +325,13 @@ card = {
     }
   },
   props: {
-    struct: {
-      type: DayStructure,
+    item: {
       required: true 
     },
   },
   methods: {
     close() {
-      console.log("%cyeet", "color:red")
+      this.$emit("close", this.item.id);
     }
   },
 }
@@ -429,17 +428,26 @@ formElement = {
 cardList = {
   template: `
     <div>
-      <card v-for='struct in daystructs' :key=struct.id :struct=struct></card>
+      <card v-for='item in itemlist' :key=item.id :item=item @close=close></card>
     </div>
   `,
   props: {
-    daystructs: {
+    itemlist: {
       type: Array,
       required: true
+    },
+    id: {
+      type: String,
+      required: true,
     },
   },
   components: {
     card,
+  },
+  methods: {
+    close(itemid) {
+      this.$emit("remove", { id: itemid, sender: this.id });
+    },
   },
 
 }
@@ -632,7 +640,7 @@ window.app = new Vue({
               <daystrucform @send=createDaystruc></daystrucform>
             </div>
             <div class="col-md-4">
-              <card-list :daystructs=daystructs></card-list>
+              <card-list id="daystructs" :itemlist=daystructs @remove=remove></card-list>
             </div>
         </div>
     </div>

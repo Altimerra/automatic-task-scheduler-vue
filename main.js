@@ -1,3 +1,5 @@
+var parser = new Worker('parse.js')
+
 textForm = {
   template: `
     <div class="form-group">
@@ -508,9 +510,9 @@ taskform = {
   data() {
     return {
       container: {
-        taskname: undefined,
-        hours: undefined,
-        minutes: undefined,
+        taskname: '',
+        hours: 0,
+        minutes: 0,
       },
     };
   },
@@ -535,9 +537,9 @@ taskform = {
         );
         this.$emit("send", createTask);
         this.container = {
-          taskname: undefined,
-          hours: undefined,
-          minutes: undefined,
+          taskname: '',
+          hours: 0,
+          minutes: 0,
         };
       } else {
         console.log("empty fields");
@@ -683,6 +685,22 @@ window.app = new Vue({
       }
     },
   },
+  mounted () {
+    //localStorage.setItem('taskSchedulerDataTasks', '')
+    let dataTasks = localStorage.getItem('taskSchedulerDataTasks')
+    if (dataTasks) {
+      parser.postMessage({action: 'parse', data: dataTasks})
+      parser.onmessage = function(message) {
+        window.app.tasks = message.data
+      }
+    }
+  },
+  updated () {
+    parser.postMessage({action: 'stringify', data: this.tasks})
+    parser.onmessage = function(message) {
+      localStorage.setItem('taskSchedulerDataTasks', message.data)
+    }
+  },
 });
 
 /* -------------------------------------------------------------------------- */
@@ -783,3 +801,5 @@ function timeStringToNumber(timestring) {
   return Number(newstring);
 }
 //!SECTION
+
+//FIXME Compatibility issues with old browsers

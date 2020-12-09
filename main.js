@@ -1,4 +1,4 @@
-var parser = new Worker('parse.js')
+var parser = new Worker("parse.js");
 
 textForm = {
   template: `
@@ -299,10 +299,10 @@ simpleList = {
   props: {
     items: {
       reqired: true,
-      type: Array
-    }
+      type: Array,
+    },
   },
-}
+};
 
 card = {
   template: `
@@ -319,24 +319,22 @@ card = {
   // TODO add close button
   components: {
     simpleList,
-    closeButton
+    closeButton,
   },
   data() {
-    return {
-      
-    }
+    return {};
   },
   props: {
     item: {
-      required: true 
+      required: true,
     },
   },
   methods: {
     close() {
       this.$emit("close", this.item.id);
-    }
+    },
   },
-}
+};
 
 formElement = {
   //NOTE redundent
@@ -436,7 +434,7 @@ cardList = {
   props: {
     itemlist: {
       type: Array,
-      required: true
+      required: true,
     },
     id: {
       type: String,
@@ -451,8 +449,7 @@ cardList = {
       this.$emit("remove", { id: itemid, sender: this.id });
     },
   },
-
-}
+};
 
 daystrucform = {
   template: `
@@ -464,9 +461,9 @@ daystrucform = {
   data() {
     return {
       container: {
-        name: undefined
-      }
-    }
+        name: undefined,
+      },
+    };
   },
   components: {
     textForm,
@@ -476,13 +473,13 @@ daystrucform = {
     update(inputObj) {
       this.container[inputObj.sender] = inputObj.data;
     },
-    handleClick(){
-      if(this.container.name) {
-        this.$emit('send', this.container.name)
+    handleClick() {
+      if (this.container.name) {
+        this.$emit("send", this.container.name);
       }
-    }
+    },
   },
-}
+};
 
 taskform = {
   template: `
@@ -510,7 +507,7 @@ taskform = {
   data() {
     return {
       container: {
-        taskname: '',
+        taskname: "",
         hours: 0,
         minutes: 0,
       },
@@ -537,7 +534,7 @@ taskform = {
         );
         this.$emit("send", createTask);
         this.container = {
-          taskname: '',
+          taskname: "",
           hours: 0,
           minutes: 0,
         };
@@ -670,10 +667,10 @@ window.app = new Vue({
       this.timeblocks.push(timeblock);
     },
     createDaystruc(name) {
-      if (this.timeblocks.length>0){
-        let daystruc = new DayStructure(name, _.clone(this.timeblocks))
-        this.daystructs.push(daystruc)
-        this.timeblocks.splice(0,this.timeblocks.length)
+      if (this.timeblocks.length > 0) {
+        let daystruc = new DayStructure(name, _.clone(this.timeblocks));
+        this.daystructs.push(daystruc);
+        this.timeblocks.splice(0, this.timeblocks.length);
       }
     },
     remove(obj) {
@@ -685,21 +682,30 @@ window.app = new Vue({
       }
     },
   },
-  mounted () {
-    //localStorage.setItem('taskSchedulerDataTasks', '')
-    let dataTasks = localStorage.getItem('taskSchedulerDataTasks')
-    if (dataTasks) {
-      parser.postMessage({action: 'parse', data: dataTasks})
-      parser.onmessage = function(message) {
-        window.app.tasks = message.data
-      }
-    }
+  mounted() {
+    //localStorage.setItem('taskSchedulerDataTasks', '[]')
+    //localStorage.setItem('taskSchedulerDataStructs', '[]')
+    let dataTasks = localStorage.getItem("taskSchedulerDataTasks");
+    let dataStructs = localStorage.getItem("taskSchedulerDataStructs");
+    console.log(returnDefined([dataTasks, dataStructs]));
+    parser.postMessage({
+      action: "parse",
+      data: returnDefined([dataTasks, dataStructs]),
+    });
+    parser.onmessage = function (message) {
+      window.app.tasks = message.data[0];
+      window.app.daystructs = message.data[1];
+    };
   },
-  updated () {
-    parser.postMessage({action: 'stringify', data: this.tasks})
-    parser.onmessage = function(message) {
-      localStorage.setItem('taskSchedulerDataTasks', message.data)
-    }
+  updated() {
+    parser.postMessage({
+      action: "stringify",
+      data: [this.tasks, this.daystructs],
+    });
+    parser.onmessage = function (message) {
+      localStorage.setItem("taskSchedulerDataTasks", message.data[0]);
+      localStorage.setItem("taskSchedulerDataStructs", message.data[1]);
+    };
   },
 });
 
@@ -799,6 +805,18 @@ function timeStringToObject(timestring) {
 function timeStringToNumber(timestring) {
   let newstring = timestring.slice(0, 2) + timestring.slice(3);
   return Number(newstring);
+}
+
+function returnDefined(array) {
+  let output = [];
+  for (element of array) {
+    if (element == undefined || element == null) {
+      output.push("[]");
+    } else {
+      output.push(element);
+    }
+  }
+  return output;
 }
 //!SECTION
 
